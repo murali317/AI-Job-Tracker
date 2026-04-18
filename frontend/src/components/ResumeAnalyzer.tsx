@@ -3,6 +3,7 @@ import { aiApi } from '../api';
 import type { ResumeAnalysis } from '../types';
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
+import { showToast } from './Toast';
 
 // PDF.js worker — use the bundled worker from pdfjs-dist
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -107,7 +108,15 @@ const ResumeAnalyzer = () => {
 
     try {
       const response = await aiApi.analyzeResume(trimmed);
-      setResult(response.data.data);
+      const data = response.data.data;
+      setResult(data);
+      if (data.score >= 8) {
+        showToast({ type: 'success', message: `Excellent resume! Score: ${data.score}/10 — you're a great fit. All the best with your preparation!`, duration: 5000 });
+      } else if (data.score >= 5) {
+        showToast({ type: 'info', message: `Resume score: ${data.score}/10 — good foundation. Check the suggestions to level up!`, duration: 5000 });
+      } else {
+        showToast({ type: 'info', message: `Resume score: ${data.score}/10 — review the improvements below to strengthen it.`, duration: 5000 });
+      }
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosErr = err as { response?: { data?: { message?: string } } };
@@ -133,7 +142,7 @@ const ResumeAnalyzer = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200/70 dark:border-gray-700 shadow-sm dark:shadow-none ring-1 ring-gray-100 dark:ring-0 overflow-hidden">
       {/* Toggle header */}
       <button
         onClick={() => setIsOpen(!isOpen)}

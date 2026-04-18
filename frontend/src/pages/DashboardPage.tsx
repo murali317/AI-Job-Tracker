@@ -7,6 +7,8 @@ import AddJobModal from '../components/AddJobModal';
 import JobCard from '../components/JobCard';
 import ThemeToggle from '../components/ThemeToggle';
 import ResumeAnalyzer from '../components/ResumeAnalyzer';
+import JobMatchTool from '../components/JobMatchTool';
+import { showToast } from '../components/Toast';
 
 const STATUSES = ['all', 'applied', 'interviewing', 'offered', 'rejected', 'saved'] as const;
 type FilterStatus = typeof STATUSES[number];
@@ -15,6 +17,7 @@ const DashboardPage = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [filter, setFilter] = useState<FilterStatus>('all');
 
   const { user, logout } = useAuth();
@@ -34,6 +37,7 @@ const DashboardPage = () => {
   useEffect(() => { fetchJobs(); }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };
+  const confirmLogout = () => { setShowLogoutModal(false); handleLogout(); };
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('Delete this application?')) return;
@@ -50,6 +54,10 @@ const DashboardPage = () => {
     } catch { console.error('Failed to update status'); }
   };
 
+  const handleJobUpdated = (updated: Job) => {
+    setJobs(prev => prev.map(j => j.id === updated.id ? updated : j));
+  };
+
   const stats = {
     total: jobs.length,
     applied: jobs.filter(j => j.status === 'applied').length,
@@ -63,9 +71,9 @@ const DashboardPage = () => {
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-indigo-50/30 dark:bg-gray-900 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
       {/* â”€â”€â”€ Navbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+      <nav className="bg-white/80 dark:bg-gray-800 backdrop-blur-md border-b border-gray-200/70 dark:border-gray-700 sticky top-0 z-10 shadow-sm dark:shadow-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
@@ -79,7 +87,7 @@ const DashboardPage = () => {
             <ThemeToggle />
             <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-xs font-bold text-indigo-700 dark:text-indigo-300">{initials}</div>
             <span className="text-sm text-gray-600 dark:text-gray-300 hidden sm:block">{user?.name}</span>
-            <button onClick={handleLogout} title="Log out" className="text-sm text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors ml-1">
+            <button onClick={() => setShowLogoutModal(true)} title="Log out" className="text-sm text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors ml-1">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             </button>
           </div>
@@ -90,13 +98,13 @@ const DashboardPage = () => {
         {/* â”€â”€â”€ Stats Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
           {[
-            { label: 'Total', value: stats.total, color: 'text-gray-900 dark:text-white', bg: 'bg-white dark:bg-gray-800' },
-            { label: 'Applied', value: stats.applied, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-white dark:bg-gray-800' },
-            { label: 'Interviewing', value: stats.interviewing, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-white dark:bg-gray-800' },
-            { label: 'Offered', value: stats.offered, color: 'text-green-600 dark:text-green-400', bg: 'bg-white dark:bg-gray-800' },
-            { label: 'Rejected', value: stats.rejected, color: 'text-red-500 dark:text-red-400', bg: 'bg-white dark:bg-gray-800' },
+            { label: 'Total', value: stats.total, color: 'text-gray-900 dark:text-white', bg: 'bg-white dark:bg-gray-800 shadow-sm dark:shadow-none ring-1 ring-gray-200/60 dark:ring-0' },
+            { label: 'Applied', value: stats.applied, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-white dark:bg-gray-800 shadow-sm dark:shadow-none ring-1 ring-gray-200/60 dark:ring-0' },
+            { label: 'Interviewing', value: stats.interviewing, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-white dark:bg-gray-800 shadow-sm dark:shadow-none ring-1 ring-gray-200/60 dark:ring-0' },
+            { label: 'Offered', value: stats.offered, color: 'text-green-600 dark:text-green-400', bg: 'bg-white dark:bg-gray-800 shadow-sm dark:shadow-none ring-1 ring-gray-200/60 dark:ring-0' },
+            { label: 'Rejected', value: stats.rejected, color: 'text-red-500 dark:text-red-400', bg: 'bg-white dark:bg-gray-800 shadow-sm dark:shadow-none ring-1 ring-gray-200/60 dark:ring-0' },
           ].map(s => (
-            <div key={s.label} className={`${s.bg} rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3`}>
+            <div key={s.label} className={`${s.bg} rounded-xl border border-gray-100 dark:border-gray-700 px-4 py-3`}>
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{s.label}</p>
               <p className={`text-2xl font-bold mt-0.5 ${s.color}`}>{s.value}</p>
             </div>
@@ -106,9 +114,13 @@ const DashboardPage = () => {
         <div className="mb-6">
           <ResumeAnalyzer />
         </div>
+        {/* AI Job Match Tool */}
+        <div className="mb-6">
+          <JobMatchTool />
+        </div>
         {/* â”€â”€â”€ Toolbar: filter tabs + add button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-          <div className="flex gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1 overflow-x-auto">
+          <div className="flex gap-1 bg-white dark:bg-gray-800 border border-gray-200/70 dark:border-gray-700 rounded-lg p-1 overflow-x-auto shadow-sm dark:shadow-none">
             {STATUSES.map(s => (
               <button
                 key={s}
@@ -144,7 +156,7 @@ const DashboardPage = () => {
           </div>
         ) : filteredJobs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-4">
+            <div className="w-16 h-16 bg-indigo-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-4">
               <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
             </div>
             <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">
@@ -157,14 +169,35 @@ const DashboardPage = () => {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredJobs.map(job => (
-              <JobCard key={job.id} job={job} onDelete={handleDelete} onStatusChange={handleStatusChange} />
+              <JobCard key={job.id} job={job} onDelete={handleDelete} onStatusChange={handleStatusChange} onJobUpdated={handleJobUpdated} />
             ))}
           </div>
         )}
       </div>
 
       {showAddModal && (
-        <AddJobModal onClose={() => setShowAddModal(false)} onJobAdded={() => { setShowAddModal(false); fetchJobs(); }} />
+        <AddJobModal onClose={() => setShowAddModal(false)} onJobAdded={() => { setShowAddModal(false); fetchJobs(); showToast({ type: 'success', message: 'Job added successfully! Keep tracking your applications.' }); }} />
+      )}
+
+      {/* Logout confirmation modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm border border-gray-200 dark:border-gray-700 p-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Log out?</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">Are you sure you want to log out of your account?</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowLogoutModal(false)} className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition-colors">
+                Cancel
+              </button>
+              <button onClick={confirmLogout} className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors">
+                Log out
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -36,7 +36,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-white dark:bg-gray-900">
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 to-indigo-50/40 dark:from-gray-900 dark:to-gray-900">
       {/* Left panel: branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-linear-to-br from-indigo-950 via-indigo-800 to-indigo-600 p-12 flex-col justify-between relative overflow-hidden">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full" />
