@@ -43,4 +43,13 @@ export const jobsApi = {
   delete: (id: number) => api.delete(`/jobs/${id}`),
 };
 
+// ─── AI API calls ────────────────────────────────────────────────────────
+export const aiApi = {
+  analyzeResume: (resumeText: string) =>
+    api.post('/ai/analyze-resume', { resumeText }),
+
+  matchJob: (resumeText: string, jobDescription: string) =>
+    api.post('/ai/match-job', { resumeText, jobDescription }),
+};
+
 export default api;

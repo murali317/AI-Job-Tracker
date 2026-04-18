@@ -34,3 +34,21 @@ export interface JobFormData {
   applied_date?: string;
   notes?: string;
 }
+
+// ─── AI Response Types ─────────────────────────────────────────────────────
+
+export interface ResumeAnalysis {
+  score: number;
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+  suggestions: string[];
+}
+
+export interface JobMatchResult {
+  matchPercentage: number;
+  summary: string;
+  matchingSkills: string[];
+  missingSkills: string[];
+  tips: string[];
+}

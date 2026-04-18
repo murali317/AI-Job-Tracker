@@ -6,6 +6,7 @@ import type { Job } from '../types';
 import AddJobModal from '../components/AddJobModal';
 import JobCard from '../components/JobCard';
 import ThemeToggle from '../components/ThemeToggle';
+import ResumeAnalyzer from '../components/ResumeAnalyzer';
 
 const STATUSES = ['all', 'applied', 'interviewing', 'offered', 'rejected', 'saved'] as const;
 type FilterStatus = typeof STATUSES[number];
@@ -101,7 +102,10 @@ const DashboardPage = () => {
             </div>
           ))}
         </div>
-
+        {/* AI Resume Analyzer */}
+        <div className="mb-6">
+          <ResumeAnalyzer />
+        </div>
         {/* â”€â”€â”€ Toolbar: filter tabs + add button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <div className="flex gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1 overflow-x-auto">

@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { Job } from '../types';
+import JobMatchModal from './JobMatchModal';
 
 const STATUS_CONFIG: Record<string, { border: string; badge: string; label: string }> = {
   applied:      { border: 'border-l-blue-500',   badge: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',     label: 'Applied' },
@@ -15,6 +17,7 @@ interface JobCardProps {
 }
 
 const JobCard = ({ job, onDelete, onStatusChange }: JobCardProps) => {
+  const [showMatchModal, setShowMatchModal] = useState(false);
   const cfg = STATUS_CONFIG[job.status] || STATUS_CONFIG.saved;
   const initials = job.company_name.slice(0, 2).toUpperCase();
   const date = job.applied_date
@@ -57,6 +60,15 @@ const JobCard = ({ job, onDelete, onStatusChange }: JobCardProps) => {
         </select>
       </div>
 
+      {/* AI Match button */}
+      <button
+        onClick={() => setShowMatchModal(true)}
+        className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors mb-3"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        AI Match
+      </button>
+
       {/* Footer */}
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
         {job.job_url ? (
@@ -72,6 +84,10 @@ const JobCard = ({ job, onDelete, onStatusChange }: JobCardProps) => {
 
       {job.notes && (
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 line-clamp-2 leading-relaxed">{job.notes}</p>
+      )}
+
+      {showMatchModal && (
+        <JobMatchModal job={job} onClose={() => setShowMatchModal(false)} />
       )}
     </div>
   );

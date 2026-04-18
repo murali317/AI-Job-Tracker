@@ -11,6 +11,7 @@ dotenv.config();
 import pool from './config/db';
 import authRoutes from './routes/auth';
 import jobRoutes from './routes/jobs';
+import aiRoutes from './routes/ai';
 
 const app: Application = express();
 
@@ -34,6 +35,9 @@ app.use('/api/auth', authRoutes);
 // Mount the jobs router under /api/jobs
 // All routes defined in routes/jobs.ts will be prefixed with /api/jobs
 app.use('/api/jobs', jobRoutes);
+
+// AI routes — resume analysis & job matching (protected by auth middleware)
+app.use('/api/ai', aiRoutes);
 
 // Health check route — used to verify the server is running
 // Postman: GET http://localhost:5000/health
