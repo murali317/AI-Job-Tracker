@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { aiApi } from '../api';
 import type { JobMatchResult } from '../types';
 import { showToast } from './Toast';
+import ResumeUpload from './ResumeUpload';
 
 const JobMatchTool = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -98,14 +99,13 @@ const JobMatchTool = () => {
             <div className="pt-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Your Resume</label>
-                <textarea
+                <ResumeUpload
                   value={resumeText}
-                  onChange={(e) => setResumeText(e.target.value)}
+                  onChange={setResumeText}
+                  onError={setError}
                   rows={5}
-                  placeholder="Paste your resume text here..."
-                  className="w-full px-3.5 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  accentColor="indigo"
                 />
-                <span className="text-xs text-gray-400 dark:text-gray-500">{resumeText.trim().length.toLocaleString()} / 15,000</span>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Job Description</label>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { aiApi } from '../api';
 import type { Job, JobMatchResult } from '../types';
+import ResumeUpload from './ResumeUpload';
 
 interface JobMatchModalProps {
   job: Job;
@@ -89,14 +90,13 @@ const JobMatchModal = ({ job, onClose }: JobMatchModalProps) => {
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Your Resume</label>
-                <textarea
+                <ResumeUpload
                   value={resumeText}
-                  onChange={(e) => setResumeText(e.target.value)}
-                  rows={5}
-                  placeholder="Paste your resume text here..."
-                  className="w-full px-3.5 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  onChange={setResumeText}
+                  onError={setError}
+                  rows={4}
+                  accentColor="indigo"
                 />
-                <span className="text-xs text-gray-400 dark:text-gray-500">{resumeText.trim().length.toLocaleString()} / 15,000</span>
               </div>
 
               {/* Input: Job Description */}
