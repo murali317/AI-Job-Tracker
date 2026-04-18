@@ -3,19 +3,21 @@ import { AuthRequest } from '../middleware/auth';
 import * as aiService from '../services/aiService';
 
 // ─── Input Limits ──────────────────────────────────────────────────────────
-// Prevent users from sending absurdly long text that would eat Gemini quota
+// Prevent users from sending absurdly long text that would eat Groq quota
 const MAX_RESUME_LENGTH = 15000;      // ~3,000 words — enough for any resume
 const MAX_JOB_DESC_LENGTH = 10000;    // ~2,000 words — enough for any JD
 const MIN_TEXT_LENGTH = 50;            // reject trivially short input
 
 // ─── Error Helper ──────────────────────────────────────────────────────────
-// Maps Gemini SDK errors to user-friendly HTTP responses
+// Maps Groq SDK errors to user-friendly HTTP responses.
+// Groq uses OpenAI-compatible error format with a `status` property.
 const handleAIError = (error: unknown, res: Response): void => {
   const errMsg = error instanceof Error ? error.message : String(error);
+  const status = (error as { status?: number }).status;
 
-  // Gemini API key issues
-  if (errMsg.includes('API_KEY_INVALID') || errMsg.includes('API key not valid')) {
-    console.error('Gemini API key is invalid');
+  // Authentication errors (invalid or expired API key)
+  if (status === 401 || errMsg.includes('Invalid API Key') || errMsg.includes('authentication')) {
+    console.error('Groq API key is invalid');
     res.status(503).json({
       status: 'error',
       message: 'AI service is temporarily unavailable. Please try again later.',
@@ -23,9 +25,9 @@ const handleAIError = (error: unknown, res: Response): void => {
     return;
   }
 
-  // Model not found (deprecated or renamed)
-  if (errMsg.includes('is not found for API version') || errMsg.includes('404')) {
-    console.error('Gemini model not found:', errMsg);
+  // Model not found
+  if (status === 404 || errMsg.includes('model_not_found')) {
+    console.error('Groq model not found:', errMsg);
     res.status(503).json({
       status: 'error',
       message: 'AI model is temporarily unavailable. Please try again later.',
@@ -33,9 +35,9 @@ const handleAIError = (error: unknown, res: Response): void => {
     return;
   }
 
-  // Gemini rate limit (free tier: 15 RPM)
-  if (errMsg.includes('RATE_LIMIT_EXCEEDED') || errMsg.includes('429') || errMsg.includes('quota')) {
-    console.error('Gemini rate limit hit');
+  // Rate limit (free tier: 30 RPM)
+  if (status === 429 || errMsg.includes('rate_limit') || errMsg.includes('quota')) {
+    console.error('Groq rate limit hit');
     res.status(429).json({
       status: 'error',
       message: 'AI service is busy. Please wait a moment and try again.',
@@ -43,9 +45,9 @@ const handleAIError = (error: unknown, res: Response): void => {
     return;
   }
 
-  // Gemini safety / content blocked
-  if (errMsg.includes('SAFETY') || errMsg.includes('blocked') || errMsg.includes('HARM_CATEGORY')) {
-    console.error('Gemini safety filter triggered:', errMsg);
+  // Content moderation / safety
+  if (errMsg.includes('content_filter') || errMsg.includes('moderation')) {
+    console.error('Groq content filter triggered:', errMsg);
     res.status(422).json({
       status: 'error',
       message: 'The text could not be analyzed. Please check the content and try again.',
@@ -53,9 +55,9 @@ const handleAIError = (error: unknown, res: Response): void => {
     return;
   }
 
-  // GEMINI_API_KEY not set in .env
-  if (errMsg.includes('GEMINI_API_KEY is not set')) {
-    console.error('GEMINI_API_KEY missing from .env');
+  // GROQ_API_KEY not set in .env
+  if (errMsg.includes('GROQ_API_KEY is not set')) {
+    console.error('GROQ_API_KEY missing from .env');
     res.status(503).json({
       status: 'error',
       message: 'AI service is not configured. Please contact the administrator.',
@@ -63,7 +65,7 @@ const handleAIError = (error: unknown, res: Response): void => {
     return;
   }
 
-  // JSON parse errors (Gemini returned invalid JSON)
+  // JSON parse errors (LLM returned invalid JSON)
   if (error instanceof SyntaxError) {
     console.error('Failed to parse AI response:', errMsg);
     res.status(502).json({

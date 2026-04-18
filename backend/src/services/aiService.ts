@@ -1,31 +1,22 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
-// ─── Gemini Client ─────────────────────────────────────────────────────────
-// Google Gemini offers a generous free tier:
-//   - 15 requests per minute
-//   - 1 million tokens per day
+// ─── Groq Client ───────────────────────────────────────────────────────────
+// Groq offers a generous free tier:
+//   - 30 requests per minute
+//   - 14,400 requests per day
 //   - No credit card required
-// Perfect for a portfolio project that real users can actually try.
+// Uses Llama 3.1 8B — fast and great for text analysis tasks.
 
-const getModel = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+const getClient = (): Groq => {
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not set in .env');
+    throw new Error('GROQ_API_KEY is not set in .env');
   }
-  const genAI = new GoogleGenerativeAI(apiKey);
-  // gemini-2.0-flash is fast, free, and great for text analysis
-  return genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
-    generationConfig: {
-      responseMimeType: 'application/json', // forces valid JSON output
-      temperature: 0.3,                     // low = consistent responses
-      maxOutputTokens: 1024,
-    },
-  });
+  return new Groq({ apiKey });
 };
 
 // ─── Response Types ────────────────────────────────────────────────────────
-// These define the shape of JSON we expect back from Gemini.
+// These define the shape of JSON we expect back from the LLM.
 // We validate at runtime since LLMs can technically return anything.
 
 export interface ResumeAnalysis {
@@ -44,22 +35,22 @@ export interface JobMatchResult {
   tips: string[];              // tailored advice for this specific application
 }
 
-// ─── Helper: extract JSON from response ────────────────────────────────────
-// Gemini may sometimes wrap JSON in markdown code fences; strip them if present
-const extractJSON = (text: string): string => {
-  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) return fenceMatch[1].trim();
-  return text.trim();
-};
-
 // ─── Analyze Resume ────────────────────────────────────────────────────────
-// Takes raw resume text, asks Gemini to evaluate it as a career coach.
+// Takes raw resume text, asks the LLM to evaluate it as a career coach.
 
 export const analyzeResume = async (resumeText: string): Promise<ResumeAnalysis> => {
-  const model = getModel();
+  const client = getClient();
 
-  const prompt = `You are an expert career coach and resume reviewer with 15 years of experience.
-Analyze the following resume text and return a JSON object with EXACTLY this structure:
+  const response = await client.chat.completions.create({
+    model: 'llama-3.1-8b-instant',
+    response_format: { type: 'json_object' },
+    max_tokens: 1024,
+    temperature: 0.3,
+    messages: [
+      {
+        role: 'system',
+        content: `You are an expert career coach and resume reviewer with 15 years of experience.
+Analyze the given resume text and return a JSON object with EXACTLY this structure:
 {
   "score": <number 1-10>,
   "summary": "<1-2 sentence overall assessment>",
@@ -67,24 +58,25 @@ Analyze the following resume text and return a JSON object with EXACTLY this str
   "improvements": ["<improvement 1>", "<improvement 2>", "<improvement 3>"],
   "suggestions": ["<actionable suggestion 1>", "<actionable suggestion 2>", "<actionable suggestion 3>"]
 }
-Rules:
 - score: 1 = very poor, 10 = exceptional. Be honest but constructive.
 - strengths: exactly 3 items. Focus on what stands out positively.
 - improvements: exactly 3 items. Focus on gaps or weaknesses.
-- suggestions: exactly 3 items. Practical, specific, and actionable tips.
-- Return ONLY valid JSON. No markdown, no code fences, no extra text.
+- suggestions: exactly 3 items. Practical, specific, and actionable tips to improve.
+Return ONLY valid JSON. No markdown, no code fences.`,
+      },
+      {
+        role: 'user',
+        content: resumeText,
+      },
+    ],
+  });
 
-RESUME:
-${resumeText}`;
-
-  const result = await model.generateContent(prompt);
-  const raw = result.response.text();
-
+  const raw = response.choices[0]?.message?.content;
   if (!raw) {
-    throw new Error('Empty response from Gemini');
+    throw new Error('Empty response from AI');
   }
 
-  const parsed = JSON.parse(extractJSON(raw)) as ResumeAnalysis;
+  const parsed = JSON.parse(raw) as ResumeAnalysis;
 
   // Runtime validation — LLM may not always respect the schema
   if (
@@ -110,9 +102,17 @@ export const matchJobToResume = async (
   resumeText: string,
   jobDescription: string
 ): Promise<JobMatchResult> => {
-  const model = getModel();
+  const client = getClient();
 
-  const prompt = `You are an expert recruiter and career advisor.
+  const response = await client.chat.completions.create({
+    model: 'llama-3.1-8b-instant',
+    response_format: { type: 'json_object' },
+    max_tokens: 1024,
+    temperature: 0.3,
+    messages: [
+      {
+        role: 'system',
+        content: `You are an expert recruiter and career advisor.
 Compare the candidate's resume against the job description and return a JSON object with EXACTLY this structure:
 {
   "matchPercentage": <number 0-100>,
@@ -121,29 +121,25 @@ Compare the candidate's resume against the job description and return a JSON obj
   "missingSkills": ["<skill 1>", "<skill 2>", ...],
   "tips": ["<tip 1>", "<tip 2>", "<tip 3>"]
 }
-Rules:
 - matchPercentage: 0 = completely unqualified, 100 = perfect match. Be realistic.
-- matchingSkills: skills/qualifications from the resume that match JD requirements.
-- missingSkills: skills/qualifications the JD requires that are NOT in the resume.
+- matchingSkills: list skills/qualifications from the resume that match the JD requirements.
+- missingSkills: list skills/qualifications the JD requires that are NOT in the resume.
 - tips: 3 specific, actionable tips to improve chances for THIS particular job.
-- Return ONLY valid JSON. No markdown, no code fences, no extra text.
+Return ONLY valid JSON. No markdown, no code fences.`,
+      },
+      {
+        role: 'user',
+        content: `RESUME:\n${resumeText}\n\n---\n\nJOB DESCRIPTION:\n${jobDescription}`,
+      },
+    ],
+  });
 
-RESUME:
-${resumeText}
-
----
-
-JOB DESCRIPTION:
-${jobDescription}`;
-
-  const result = await model.generateContent(prompt);
-  const raw = result.response.text();
-
+  const raw = response.choices[0]?.message?.content;
   if (!raw) {
-    throw new Error('Empty response from Gemini');
+    throw new Error('Empty response from AI');
   }
 
-  const parsed = JSON.parse(extractJSON(raw)) as JobMatchResult;
+  const parsed = JSON.parse(raw) as JobMatchResult;
 
   // Runtime validation
   if (
