@@ -21,7 +21,14 @@ const app: Application = express();
 
 // Allows your React frontend (different port/domain) to call this API
 // Without this, the browser will block the request (CORS policy)
-app.use(cors());
+// In production, FRONTEND_URL restricts which domain can call our API.
+// Locally, it falls back to allowing everything.
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true,
+  })
+);
 
 // Parses incoming requests with JSON bodies
 // Without this, req.body would be undefined when frontend sends JSON

@@ -1,10 +1,11 @@
 import axios from 'axios';
 
 // Create an axios instance with the backend base URL.
-// This way every API call automatically goes to http://localhost:5000
-// instead of typing the full URL each time.
+// VITE_API_URL is set in .env (local) or Vercel dashboard (production).
+// Locally it defaults to http://localhost:5000/api.
+// In production it'll point to the Render backend URL.
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
 });
 
 // ─── Request Interceptor ──────────────────────────────────────────────────
