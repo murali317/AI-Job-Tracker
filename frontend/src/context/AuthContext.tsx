@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (user: User, token: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean; // true until localStorage check completes on first render
 }
 
 // ─── Create Context ────────────────────────────────────────────────────────
@@ -19,9 +20,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // starts true — block render until check done
 
-  // On app load, check if there's a saved token in localStorage
-  // This keeps the user logged in after page refresh
+  // On app load, restore session from localStorage BEFORE rendering any route
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
@@ -29,6 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
     }
+    setIsLoading(false); // only now is it safe to render protected routes
   }, []);
 
   const login = (newUser: User, newToken: string) => {
@@ -54,6 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         logout,
         isAuthenticated: !!token,
+        isLoading,
       }}
     >
       {children}
