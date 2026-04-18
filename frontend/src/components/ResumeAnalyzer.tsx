@@ -1,6 +1,45 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { aiApi } from '../api';
 import type { ResumeAnalysis } from '../types';
+import * as pdfjsLib from 'pdfjs-dist';
+import mammoth from 'mammoth';
+
+// PDF.js worker — use the bundled worker from pdfjs-dist
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.mjs',
+  import.meta.url,
+).toString();
+
+const ACCEPTED_FILE_TYPES = '.pdf,.docx,.txt';
+const MAX_FILE_SIZE_MB = 5;
+
+const extractTextFromFile = async (file: File): Promise<string> => {
+  const ext = file.name.split('.').pop()?.toLowerCase();
+
+  if (ext === 'txt') {
+    return file.text();
+  }
+
+  if (ext === 'pdf') {
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const pages: string[] = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      pages.push(content.items.map((item) => ('str' in item ? (item as { str: string }).str : '')).join(' '));
+    }
+    return pages.join('\n');
+  }
+
+  if (ext === 'docx') {
+    const buffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+    return result.value;
+  }
+
+  throw new Error('Unsupported file type. Please upload a PDF, DOCX, or TXT file.');
+};
 
 const ResumeAnalyzer = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -8,6 +47,48 @@ const ResumeAnalyzer = () => {
   const [result, setResult] = useState<ResumeAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [fileName, setFileName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (file: File) => {
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      setError(`File too large. Maximum size is ${MAX_FILE_SIZE_MB}MB.`);
+      return;
+    }
+
+    setError('');
+    setUploadingFile(true);
+    setFileName(file.name);
+
+    try {
+      const text = await extractTextFromFile(file);
+      const trimmed = text.trim();
+      if (trimmed.length < 50) {
+        setError('Could not extract enough text from the file. Please try pasting your resume text instead.');
+        setFileName('');
+      } else {
+        setResumeText(trimmed.slice(0, 15000));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to read file. Please try pasting your resume text instead.');
+      setFileName('');
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileUpload(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFileUpload(file);
+  };
 
   const handleAnalyze = async () => {
     const trimmed = resumeText.trim();
@@ -66,7 +147,7 @@ const ResumeAnalyzer = () => {
           </div>
           <div>
             <p className="font-semibold text-gray-900 dark:text-white text-sm">AI Resume Analyzer</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Paste your resume to get AI-powered feedback</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Upload or paste your resume to get AI-powered feedback</p>
           </div>
         </div>
         <svg className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,14 +159,56 @@ const ResumeAnalyzer = () => {
       {isOpen && (
         <div className="px-5 pb-5 border-t border-gray-100 dark:border-gray-700">
           <div className="pt-4">
+            {/* File upload area */}
+            <div
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+              className="mb-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:border-purple-400 dark:hover:border-purple-500 transition-colors cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_FILE_TYPES}
+                onChange={handleFileChange}
+                className="hidden"
+                aria-label="Upload resume file"
+              />
+              {uploadingFile ? (
+                <div className="flex items-center justify-center gap-2 text-purple-600 dark:text-purple-400">
+                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                  <span className="text-sm font-medium">Reading {fileName}...</span>
+                </div>
+              ) : (
+                <>
+                  <svg className="w-8 h-8 mx-auto text-gray-400 dark:text-gray-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="font-medium text-purple-600 dark:text-purple-400">Click to upload</span> or drag and drop
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">PDF, DOCX, or TXT (max {MAX_FILE_SIZE_MB}MB)</p>
+                  {fileName && (
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">Loaded: {fileName}</p>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+              <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">OR paste text below</span>
+              <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+            </div>
+
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Paste your resume text
+              Resume text
             </label>
             <textarea
               value={resumeText}
               onChange={(e) => setResumeText(e.target.value)}
               rows={6}
-              placeholder="Paste the full text of your resume here... (copy from your resume document)"
+              placeholder="Paste your resume text here, or upload a file above..."
               className="w-full px-3.5 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm resize-none"
             />
             <div className="flex items-center justify-between mt-2">
