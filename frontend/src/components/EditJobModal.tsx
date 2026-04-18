@@ -73,20 +73,20 @@ const EditJobModal = ({ job, onClose, onJobUpdated }: EditJobModalProps) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className={labelClass}>Company <span className="text-red-400">*</span></label>
-              <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} required placeholder="e.g. Google" className={inputClass} />
+              <label htmlFor="edit-company" className={labelClass}>Company <span className="text-red-400">*</span></label>
+              <input id="edit-company" type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} required placeholder="e.g. Google" className={inputClass} />
             </div>
             <div className="col-span-2">
-              <label className={labelClass}>Job Title <span className="text-red-400">*</span></label>
-              <input type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} required placeholder="e.g. Software Engineer" className={inputClass} />
+              <label htmlFor="edit-job-title" className={labelClass}>Job Title <span className="text-red-400">*</span></label>
+              <input id="edit-job-title" type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} required placeholder="e.g. Software Engineer" className={inputClass} />
             </div>
             <div className="col-span-2">
-              <label className={labelClass}>Job URL</label>
-              <input type="url" value={jobUrl} onChange={e => setJobUrl(e.target.value)} placeholder="https://..." className={inputClass} />
+              <label htmlFor="edit-job-url" className={labelClass}>Job URL</label>
+              <input id="edit-job-url" type="url" value={jobUrl} onChange={e => setJobUrl(e.target.value)} placeholder="https://..." className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Status</label>
-              <select value={status} onChange={e => setStatus(e.target.value)} aria-label="Status" className={inputClass}>
+              <label htmlFor="edit-status" className={labelClass}>Status</label>
+              <select id="edit-status" value={status} onChange={e => setStatus(e.target.value)} className={inputClass}>
                 <option value="saved">Saved</option>
                 <option value="applied">Applied</option>
                 <option value="interviewing">Interviewing</option>
@@ -95,12 +95,12 @@ const EditJobModal = ({ job, onClose, onJobUpdated }: EditJobModalProps) => {
               </select>
             </div>
             <div>
-              <label className={labelClass}>Applied Date</label>
-              <input type="date" value={appliedDate} onChange={e => setAppliedDate(e.target.value)} className={inputClass} />
+              <label htmlFor="edit-applied-date" className={labelClass}>Applied Date</label>
+              <input id="edit-applied-date" type="date" value={appliedDate} onChange={e => setAppliedDate(e.target.value)} title="Applied Date" className={inputClass} />
             </div>
             <div className="col-span-2">
-              <label className={labelClass}>Notes</label>
-              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Optional notes..." className={`${inputClass} resize-none`} />
+              <label htmlFor="edit-notes" className={labelClass}>Notes</label>
+              <textarea id="edit-notes" value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Optional notes..." className={`${inputClass} resize-none`} />
             </div>
           </div>
 

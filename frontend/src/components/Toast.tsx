@@ -82,7 +82,10 @@ const ToastItem = ({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       <div className="shrink-0 mt-0.5">{icons[toast.type]}</div>
       <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed flex-1">{toast.message}</p>
       <button
+        type='button'
         onClick={() => { setVisible(false); setTimeout(() => onDismiss(toast.id), 300); }}
+        aria-label="Dismiss notification"
+        title="Dismiss"
         className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
