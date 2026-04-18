@@ -1,14 +1,13 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthRequest } from '../middleware/auth';
 import * as jobService from '../services/jobService';
 
-// Temporary: hardcode userId = 1 until we add JWT auth in Step 4.
-// After Step 4, this will come from req.user.id (decoded from the JWT token).
-const TEMP_USER_ID = 1;
-
 // ─── GET /api/jobs ──────────────────────────────────────────────────────────
-export const getAllJobs = async (req: Request, res: Response) => {
+export const getAllJobs = async (req: AuthRequest, res: Response) => {
   try {
-    const jobs = await jobService.getAllJobs(TEMP_USER_ID);
+    // req.user is set by the auth middleware (decoded from JWT token)
+    const userId = req.user!.userId;
+    const jobs = await jobService.getAllJobs(userId);
     res.status(200).json({ status: 'success', data: jobs });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Failed to fetch jobs' });
@@ -16,7 +15,7 @@ export const getAllJobs = async (req: Request, res: Response) => {
 };
 
 // ─── GET /api/jobs/:id ──────────────────────────────────────────────────────
-export const getJobById = async (req: Request, res: Response) => {
+export const getJobById = async (req: AuthRequest, res: Response) => {
   try {
     // req.params.id is always a string — we convert it to a number
     // Cast to string first: newer @types/express types params as string | string[]
@@ -27,7 +26,8 @@ export const getJobById = async (req: Request, res: Response) => {
       return;
     }
 
-    const job = await jobService.getJobById(id, TEMP_USER_ID);
+    const userId = req.user!.userId;
+    const job = await jobService.getJobById(id, userId);
 
     if (!job) {
       // 404 = resource not found
@@ -42,7 +42,7 @@ export const getJobById = async (req: Request, res: Response) => {
 };
 
 // ─── POST /api/jobs ─────────────────────────────────────────────────────────
-export const createJob = async (req: Request, res: Response) => {
+export const createJob = async (req: AuthRequest, res: Response) => {
   try {
     const { company_name, job_title, job_url, status, applied_date, notes } = req.body;
 
@@ -55,7 +55,8 @@ export const createJob = async (req: Request, res: Response) => {
       return;
     }
 
-    const newJob = await jobService.createJob(TEMP_USER_ID, {
+    const userId = req.user!.userId;
+    const newJob = await jobService.createJob(userId, {
       company_name,
       job_title,
       job_url,
@@ -72,7 +73,7 @@ export const createJob = async (req: Request, res: Response) => {
 };
 
 // ─── PUT /api/jobs/:id ──────────────────────────────────────────────────────
-export const updateJob = async (req: Request, res: Response) => {
+export const updateJob = async (req: AuthRequest, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
 
@@ -81,7 +82,8 @@ export const updateJob = async (req: Request, res: Response) => {
       return;
     }
 
-    const updatedJob = await jobService.updateJob(id, TEMP_USER_ID, req.body);
+    const userId = req.user!.userId;
+    const updatedJob = await jobService.updateJob(id, userId, req.body);
 
     if (!updatedJob) {
       res.status(404).json({ status: 'error', message: 'Job not found' });
@@ -95,7 +97,7 @@ export const updateJob = async (req: Request, res: Response) => {
 };
 
 // ─── DELETE /api/jobs/:id ───────────────────────────────────────────────────
-export const deleteJob = async (req: Request, res: Response) => {
+export const deleteJob = async (req: AuthRequest, res: Response) => {
   try {
     const id = parseInt(req.params.id as string);
 
@@ -104,7 +106,8 @@ export const deleteJob = async (req: Request, res: Response) => {
       return;
     }
 
-    const deleted = await jobService.deleteJob(id, TEMP_USER_ID);
+    const userId = req.user!.userId;
+    const deleted = await jobService.deleteJob(id, userId);
 
     if (!deleted) {
       res.status(404).json({ status: 'error', message: 'Job not found' });

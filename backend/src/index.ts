@@ -9,6 +9,7 @@ dotenv.config();
 // Importing db.ts here triggers the pool.connect() test inside it.
 // If the DB URL is wrong, you'll see the error in your terminal on startup.
 import pool from './config/db';
+import authRoutes from './routes/auth';
 import jobRoutes from './routes/jobs';
 
 const app: Application = express();
@@ -26,6 +27,9 @@ app.use(cors());
 app.use(express.json());
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
+
+// Auth routes (public — no token needed to signup/login)
+app.use('/api/auth', authRoutes);
 
 // Mount the jobs router under /api/jobs
 // All routes defined in routes/jobs.ts will be prefixed with /api/jobs
