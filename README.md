@@ -116,99 +116,9 @@
 └── vercel.json                   # SPA rewrite rules
 ```
 
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- PostgreSQL database (or [Neon](https://neon.tech) free tier)
-- [Groq API key](https://console.groq.com) (free tier — 14,400 requests/day)
-
-### 1. Clone the repo
-
-```bash
-git clone https://github.com/<your-username>/ai-job-tracker.git
-cd ai-job-tracker
-```
-
-### 2. Set up the database
-
-Run the SQL in `backend/src/config/schema.sql` in your PostgreSQL client to create the `users` and `job_applications` tables.
-
-### 3. Backend
-
-```bash
-cd backend
-npm install
-```
-
-Create a `.env` file:
-
-```env
-DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
-JWT_SECRET=your_jwt_secret_here
-GROQ_API_KEY=gsk_your_groq_key_here
-FRONTEND_URL=http://localhost:5173
-PORT=5000
-```
-
-Start the server:
-
-```bash
-npm run dev
-```
-
-### 4. Frontend
-
-```bash
-cd frontend
-npm install
-```
-
-Create a `.env` file:
-
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
-Start the dev server:
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
-## 🔌 API Endpoints
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/api/auth/signup` | — | Register a new user |
-| `POST` | `/api/auth/login` | — | Login & get JWT token |
-| `GET` | `/api/jobs` | ✅ | Get all jobs for user |
-| `POST` | `/api/jobs` | ✅ | Create a new job |
-| `PUT` | `/api/jobs/:id` | ✅ | Update a job |
-| `DELETE` | `/api/jobs/:id` | ✅ | Delete a job |
-| `POST` | `/api/ai/analyze-resume` | ✅ | AI resume analysis |
-| `POST` | `/api/ai/match-job` | ✅ | AI job-resume matching |
-| `GET` | `/health` | — | Server health check |
-| `GET` | `/health/db` | — | Database health check |
-
----
-
-## 🌐 Deployment
-
-| Service | Platform | URL |
-|---------|----------|-----|
-| Frontend | Vercel | [ai-job-tracker-wheat.vercel.app](https://ai-job-tracker-wheat.vercel.app/) |
-| Backend | Render | Private API |
-| Database | Neon | Serverless PostgreSQL |
-
----
 
 ## 📄 License
 
@@ -217,6 +127,6 @@ This project is open source and available under the [MIT License](LICENSE).
 ---
 
 <div align="center">
-  <p><strong>Built with ☕ and AI</strong></p>
-  <p>If you found this useful, give it a ⭐</p>
+  <p><strong>Built with ☕ and ❤️</strong></p>
+  <p>If you found this useful, kindly give it a ⭐</p>
 </div>
